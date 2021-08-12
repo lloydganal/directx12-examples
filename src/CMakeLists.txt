@@ -1,0 +1,2 @@
+add_subdirectory(basic_application)
+add_subdirectory(mmgr_test)
