@@ -97,14 +97,20 @@ int ApplicationBase::create_window() {
     RegisterClassEx(&window_class);
 
     RECT window_rect = {0, 0, static_cast<LONG>(800), static_cast<LONG>(600)};
+
+    window_rect.left = GetSystemMetrics(SM_CXSCREEN) / 2 - window_rect.right / 2;
+    window_rect.top = GetSystemMetrics(SM_CYSCREEN) / 2 - window_rect.bottom / 2;
+    window_rect.right += window_rect.left;
+    window_rect.bottom += window_rect.top;
+
     AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, FALSE);
 
     m_window.handle = CreateWindow(            //
         window_class.lpszClassName,            //
         "My",                                  //
         WS_OVERLAPPEDWINDOW,                   //
-        CW_USEDEFAULT,                         //
-        CW_USEDEFAULT,                         //
+        window_rect.left,                         //
+        window_rect.top,                         //
         window_rect.right - window_rect.left,  //
         window_rect.bottom - window_rect.top,  //
         nullptr,                               // We have no parent window.
@@ -113,6 +119,9 @@ int ApplicationBase::create_window() {
         this);                                 //
 
     ShowWindow(m_window.handle, SW_SHOW);
+
+    RECT area;
+    GetClientRect(m_window.handle, &area);
 
     return RV_SUCCESS;
 }

@@ -3,6 +3,12 @@
 
 #include "../third_party/fluid_studios_memory_manager/mmgr.h"
 
+template <typename T, typename... Args>
+static T* mem_placement_new(void* ptr, Args&&... args)
+{
+	return new (ptr) T(std::forward<Args>(args)...);
+}
+
 #ifndef mem_alloc
 #define mem_alloc(size) m_allocator(__FILE__, __LINE__, __FUNCTION__, m_alloc_malloc, size)
 #endif
@@ -34,6 +40,5 @@
 #ifndef mem_delete_array
 #define mem_delete_array(ptr) m_deallocator(__FILE__, __LINE__, __FUNCTION__,m_alloc_delete_array, ptr)
 #endif
-
 
 #endif // LAG_MEMORY_HPP
