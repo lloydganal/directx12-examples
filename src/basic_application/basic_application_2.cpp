@@ -150,6 +150,14 @@ LRESULT CALLBACK window_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_
             return 0;
         }
 
+        case WM_PAINT: {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(h_wnd, &ps);
+            FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+            EndPaint(h_wnd, &ps);
+            return 0;
+        }
+
         default: {
             if (g_application && window) {
                 SystemMessage msg;
@@ -287,11 +295,10 @@ int ApplicationInterface::create_window() {
         //
         this);
 
-    if (!m_window.handle.window)
-    {
+    if (!m_window.handle.window) {
         return RV_ERROR;
     }
-    
+
     ShowWindow(m_window.handle.window, SW_SHOW);
 
     RECT area;
