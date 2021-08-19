@@ -262,40 +262,75 @@ int ApplicationInterface::create_window() {
 
     HINSTANCE h_instance = (HINSTANCE)GetModuleHandle(NULL);
 
-    WNDCLASSEX window_class = {0};
-    window_class.cbSize = sizeof(WNDCLASSEX);
-    window_class.style = CS_HREDRAW | CS_VREDRAW;
-    window_class.lpfnWndProc = window_proc;
+    /*
+        WNDCLASSEX window_class = {0};
+        window_class.cbSize = sizeof(WNDCLASSEX);
+        window_class.style = CS_HREDRAW | CS_VREDRAW;
+        window_class.lpfnWndProc = window_proc;
+        window_class.hInstance = h_instance;
+        window_class.hCursor = LoadCursor(NULL, IDC_ARROW);
+        window_class.lpszClassName = "My";
+        RegisterClassEx(&window_class);
+
+        m_window.handle.window = CreateWindow(
+            //
+            window_class.lpszClassName,
+            //
+            "My",
+            //
+            window_style,
+            //
+            window_rect.left,
+            //
+            window_rect.top,
+            //
+            window_rect.right - window_rect.left,
+            //
+            window_rect.bottom - window_rect.top,
+            // We have no parent window.
+            nullptr,
+            // We aren't using menus.
+            nullptr,
+            //
+            h_instance,
+            //
+            this);
+    */
+
+    WNDCLASSA window_class = {};
+    window_class.lpfnWndProc = (WNDPROC)window_proc;
     window_class.hInstance = h_instance;
-    window_class.hCursor = LoadCursor(NULL, IDC_ARROW);
-    window_class.lpszClassName = "My";
-    RegisterClassEx(&window_class);
+    window_class.lpszClassName = get_name();
+    RegisterClassA(&window_class);
 
-    m_window.handle.window = CreateWindow(
-        //
+    // https://docs.microsoft.com/en-us/previous-versions/ms960010(v=msdn.10)
+    m_window.handle.window = CreateWindowExA(
+        // Optional window styles
+        0,
+        // Window class name
         window_class.lpszClassName,
-        //
-        "My",
-        //
+        // Window title
+        get_name(),
+        // Window style
         window_style,
-        //
+        // Window position origin x
         window_rect.left,
-        //
+        // Window position origin y
         window_rect.top,
-        //
+        // Width
         window_rect.right - window_rect.left,
-        //
+        // Height
         window_rect.bottom - window_rect.top,
-        // We have no parent window.
+        // Parent
         nullptr,
-        // We aren't using menus.
+        // Menu
         nullptr,
-        //
+        // Instance handle
         h_instance,
-        //
-        this);
+        // Additional application data
+        nullptr);
 
-    if (!m_window.handle.window) {
+    if (m_window.handle.window == nullptr) {
         return RV_ERROR;
     }
 
