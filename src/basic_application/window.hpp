@@ -14,14 +14,7 @@ struct NativeWindow {
     NativeWindowHandle handle;
 };
 
-class Window;
-
-struct SystemMessage {
-#if defined(LAG_TARGET_OS_WINDOWS)
-    Window* window_ptr;
-    NativeWindowMessage native_message;
-#endif
-};
+using SystemMessage = NativeWindowMessage;
 
 struct WindowSettings {
     bool monitor = false;
@@ -46,6 +39,8 @@ class Window {
 
     constexpr void set_input_handler(InputHandler* input_handler_ptr) { m_input_handler_ptr = input_handler_ptr; }
 
+    constexpr InputHandler* get_input_handler() { return m_input_handler_ptr; }
+
     constexpr void set_settings(WindowSettings& settings) {
         if (!m_window_created) {  // This shall be an assert
             m_settings = settings;
@@ -67,12 +62,18 @@ class Window {
     void process_system_message(SystemMessage* message);
 
   private:
+    void update_windowed_rect(Rectangle& rectangle);
+
+    void update_content_rect(Rectangle& rectangle);
+
     NativeWindowHandle m_handle;
 
     WindowSettings m_settings;
 
     Rectangle m_windowed_rect;
+    
     Rectangle m_content_rect;
+
     Rectangle m_fullscreen_rect;
 
     InputHandler* m_input_handler_ptr;
@@ -80,6 +81,12 @@ class Window {
     bool m_window_created = false;
 
     bool m_should_close = false;
+
+    bool m_is_resizing = false;
+
+    bool m_is_minimized = false;
+
+    bool m_is_focused = false;
 };
 
 }  // namespace lag

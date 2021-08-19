@@ -19,33 +19,13 @@ static LRESULT CALLBACK window_proc(HWND h_wnd, UINT message, WPARAM w_param, LP
             return 0;
         }
 
-        case WM_DESTROY: {
-            PostQuitMessage(0);
-            return 0;
-        }
-
-        case WM_PAINT: {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(h_wnd, &ps);
-            FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-            EndPaint(h_wnd, &ps);
-            return 0;
-        }
-
-        case WM_CLOSE:
-        case WM_QUIT: {
-            if (window != nullptr) {
-                window->set_should_close(true);
-            }
-        }
-
         default: {
             if (window != nullptr) {
                 SystemMessage msg;
-                msg.window_ptr = window;
-                msg.native_message.message = message;
-                msg.native_message.wParam = w_param;
-                msg.native_message.lParam = l_param;
+                msg.hwnd = h_wnd;
+                msg.message = message;
+                msg.wParam = w_param;
+                msg.lParam = l_param;
                 window->process_system_message(&msg);
             }
         }
@@ -55,13 +35,13 @@ static LRESULT CALLBACK window_proc(HWND h_wnd, UINT message, WPARAM w_param, LP
     return DefWindowProc(h_wnd, message, w_param, l_param);
 }
 
-int Window::create(const char* name, Rectangle* rect, WindowSettings* settings) {
+int Window::create(const char* name, Rectangle* rect_ptr, WindowSettings* settings) {
     if (settings != nullptr) {
         m_settings = *settings;
     }
 
-    if (rect != nullptr) {
-        m_content_rect = *rect;
+    if (rect_ptr != nullptr) {
+        m_content_rect = *rect_ptr;
     }
 
     long window_style = 0 | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
@@ -129,10 +109,12 @@ int Window::create(const char* name, Rectangle* rect, WindowSettings* settings) 
         return RV_ERROR;
     }
 
-    RECT content_rect;
-    GetClientRect(m_handle, &content_rect);
-    m_content_rect = {content_rect.left, content_rect.top, content_rect.right, content_rect.bottom};
-    m_windowed_rect = {windowed_rect.left, windowed_rect.top, windowed_rect.right, windowed_rect.bottom};
+    RECT rect;
+    GetClientRect(m_handle, &rect);
+    m_content_rect = {rect.left, rect.top, rect.right, rect.bottom};
+
+    GetWindowRect(m_handle, &rect);
+    m_windowed_rect = {rect.left, rect.top, rect.right, rect.bottom};
 
     return 0;
 }
@@ -147,8 +129,84 @@ void Window::destroy() {
 int Window::show() { return ShowWindow(m_handle, SW_SHOW); }
 
 void Window::process_system_message(SystemMessage* message) {
-    std::cout << "Message " << message->native_message.message << " " << message->native_message.lParam << " "
-              << message->native_message.wParam << std::endl;
+    switch (message->message) {
+        case WM_DESTROY: {
+            PostQuitMessage(0);
+        } break;
+
+        case WM_PAINT: {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(message->hwnd, &ps);
+            FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+            EndPaint(message->hwnd, &ps);
+        } break;
+
+        case WM_CLOSE:
+        case WM_QUIT: {
+            set_should_close(true);
+        } break;
+
+        case WM_MOVE: {
+            // to do - handle fullscreen
+            RECT rect;
+            GetWindowRect(m_handle, &rect);
+            m_windowed_rect = {rect.left, rect.top, rect.right, rect.bottom};
+
+        } break;
+
+        case WM_SIZE: {
+            switch (message->wParam) {
+                case SIZE_RESTORED:
+                case SIZE_MAXIMIZED:
+                    m_is_minimized = false;
+                    if (/*!gWindow->fullScreen && */ !m_is_resizing) {
+                        RECT rect;
+                        GetClientRect(m_handle, &rect);
+                        m_content_rect = {rect.left, rect.top, rect.right, rect.bottom};
+                        // onResize(gWindow, getRectWidth(gWindow->clientRect), getRectHeight(gWindow->clientRect));
+                        RedrawWindow(m_handle, NULL, NULL, RDW_INVALIDATE | RDW_NOERASE | RDW_INTERNALPAINT);
+                    }
+                    break;
+
+                case SIZE_MINIMIZED:
+                    m_is_minimized = true;
+                    break;
+
+                default:
+                    break;
+            }
+        } break;
+
+        case WM_SETFOCUS: {
+            m_is_focused = true;
+        } break;
+
+        case WM_KILLFOCUS: {
+            m_is_focused = false;
+        } break;
+
+        case WM_ENTERSIZEMOVE: {
+            m_is_resizing = true;
+
+        } break;
+
+        case WM_EXITSIZEMOVE: {
+            m_is_resizing = false;
+            // if (!gWindow->fullScreen) {
+            RECT rect;
+            GetClientRect(m_handle, &rect);
+            m_content_rect = {rect.left, rect.top, rect.right, rect.bottom};
+            // onResize(gWindow, getRectWidth(gWindow->clientRect), getRectHeight(gWindow->clientRect));
+            //}
+
+        } break;
+
+        case WM_SIZING: {
+        } break;
+
+        default: {
+        }
+    }
 }
 
 }  // namespace lag
